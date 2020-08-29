@@ -20,11 +20,14 @@ LOCAL_SRC_FILES := \
     ${WEBRTC_DIR}/src/vad/vad_gmm.c \
     ${WEBRTC_DIR}/src/vad/vad_sp.c \
     ${WEBRTC_DIR}/src/vad/webrtc_vad.c \
-    ${WEBRTC_DIR}/src/resampler/resampler.cc
+    ${WEBRTC_DIR}/src/resampler/resampler.cc \
+    ${TOP_DIR}/src/litevad.c
 
-LOCAL_C_INCLUDES += ${WEBRTC_DIR}/inc
+LOCAL_C_INCLUDES += ${WEBRTC_DIR}/inc ${TOP_DIR}/include
 
 LOCAL_CFLAGS += -Wall -Werror
+
+LOCAL_LDLIBS := -llog
 
 LOCAL_MODULE := liblitevad
 
