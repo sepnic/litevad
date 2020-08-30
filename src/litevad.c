@@ -40,23 +40,23 @@
 // 防止用户点击录音后，几秒内没说话，就直接判停了
 #define DEFAULT_BOS_ACTIVE_TIME  300
 
-// 持续 600ms 检测到静音，将触发 VAD 判停
-#define DEFAULT_EOS_SILENCE_TIME 600
+// 持续 700ms 检测到静音，将触发 VAD 判停
+#define DEFAULT_EOS_SILENCE_TIME 700
 
 // 语音权重阈值（最大值 100，最小值 0）：
 // 语音权重的引入主要为了解决“片段时间内，由于语音停顿，一直达不到‘持续 300 ms
 // 检测到语音’的条件”。片段时间内，语音活动间中出现停顿，我们认为这些还是属于连续
 // 的语音活动
-#define DEFAULT_BOS_ACTIVE_WEIGHT 20
+#define DEFAULT_BOS_ACTIVE_WEIGHT 30
 
 // 静音权重阈值（最大值 100，最小值 0）：
 //  1. 持续 400ms 检测到语音，认为出现有效语音数据，此时权重为 100
 //  2. 检测到 1 帧数据有语音，权重 +1；检测到 1 帧数据静音，权重 -1；值范围：0-100
-//  3. 当权重值低于 50，将触发 VAD 判停
+//  3. 当权重值低于 30，将触发 VAD 判停
 // 静音权重的引入主要为了解决“片段时间内，误检测为语音而无法判停”的问题。比如说：
 // 片段时间内，出现了大量的静音数据，但又会检测到零碎的语音，我们认为这些零碎的语
 // 音是误检测的
-#define DEFAULT_EOS_SILENCE_WEIGHT 50
+#define DEFAULT_EOS_SILENCE_WEIGHT 30
 
 // 每帧的长度（单位 ms，合法值：10ms/20ms/30ms），建议设置为 10ms
 #define DEFAULT_SPEECH_FRAME_TIME  10

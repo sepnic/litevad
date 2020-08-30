@@ -14,16 +14,6 @@
  * limitations under the License.
  */
 
-/* This is a JNI example where we use native methods to play music
- * using the native liteplayer* APIs.
- * See the corresponding Java source file located at:
- *
- *   src/com/example/liteplayerdemo/Liteplayer.java
- *
- * In this example we use assert() for "impossible" error conditions,
- * and explicit handling and recovery for more likely error conditions.
- */
-
 #include <jni.h>
 #include <stdio.h>
 #include <string>
