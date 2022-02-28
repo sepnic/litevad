@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 luoyun <sysu.zqlong@gmail.com>
+ * Copyright (C) 2018-2022 Qinglong<sysu.zqlong@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,15 @@
 #define pr_dbg(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##__VA_ARGS__)
 
+#elif defined(LITEVAD_HAVE_SYSUTILS_ENABLED)
+#include "cutils/log_helper.h"
+#define TAG "litevad"
+#define pr_dbg(fmt, ...) OS_LOGV(TAG, fmt, ##__VA_ARGS__)
+#define pr_err(fmt, ...) OS_LOGE(TAG, fmt, ##__VA_ARGS__)
+
 #else
-#define pr_dbg(fmt, ...)  fprintf(stdout, fmt, ##__VA_ARGS__)
-#define pr_err(fmt, ...)  fprintf(stderr, fmt, ##__VA_ARGS__)
+#define pr_dbg(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define pr_err(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
 #endif
 
 // BOS: begin of speech
@@ -57,6 +63,9 @@
 // 片段时间内，出现了大量的静音数据，但又会检测到零碎的语音，我们认为这些零碎的语
 // 音是误检测的
 #define DEFAULT_EOS_SILENCE_WEIGHT 30
+
+// VAD 模式（合法值：0/1/2/3），值越大对语音的判断越严格（越准确？）
+#define DEFAULT_VAD_MODE           3
 
 // 每帧的长度（单位 ms，合法值：10ms/20ms/30ms），建议设置为 10ms
 #define DEFAULT_SPEECH_FRAME_TIME  10
@@ -113,22 +122,22 @@ static bool valid_frame_size(int rate_idx, int frame_size)
     return false;
 }
 
-litevad_handle_t litevad_create(int vad_mode, int sample_rate, int channel_count)
+litevad_handle_t litevad_create(int sample_rate, int channel_count)
 {
-    if (!valid_vad_mode(vad_mode)) {
-        pr_err("Invalid vad mode, valid value: 0/1/2/3\n");
+    if (!valid_vad_mode(DEFAULT_VAD_MODE)) {
+        pr_err("Invalid vad mode, valid value: 0/1/2/3");
         return NULL;
     }
 
     int rate_idx = 0;
     if (!valid_sample_rate(sample_rate, &rate_idx)) {
-        pr_err("Invalid sampling frequency, valid value: 8000/16000/32000/48000\n");
+        pr_err("Invalid sampling frequency, valid value: 8000/16000/32000/48000");
         return NULL;
     }
 
     if (channel_count != 1) {
         // todo: support stereo2mono
-        pr_err("Invalid channel count, valid value: 1\n");
+        pr_err("Invalid channel count, valid value: 1");
         return NULL;
     }
 
@@ -140,23 +149,23 @@ litevad_handle_t litevad_create(int vad_mode, int sample_rate, int channel_count
 
     priv->vad_inst = WebRtcVad_Create();
     if (priv->vad_inst == NULL) {
-        pr_err("Failed to create vad instance\n");
+        pr_err("Failed to create vad instance");
         goto bail;
     }
 
     ret = WebRtcVad_Init(priv->vad_inst);
     if (ret != 0) {
-        pr_err("Failed to init vad instance\n");
+        pr_err("Failed to init vad instance");
         goto bail;
     }
 
-    ret = WebRtcVad_set_mode(priv->vad_inst, vad_mode);
+    ret = WebRtcVad_set_mode(priv->vad_inst, DEFAULT_VAD_MODE);
     if (ret != 0) {
-        pr_err("Failed to set vad mode\n");
+        pr_err("Failed to set vad mode");
         goto bail;
     }
 
-    priv->vad_mode         = vad_mode;
+    priv->vad_mode         = DEFAULT_VAD_MODE;
     priv->rate_idx         = rate_idx;
     priv->sample_rate      = sample_rate;
     priv->channel_count    = channel_count;
@@ -173,7 +182,7 @@ static int litevad_process_frame(litevad_handle_t handle, const short *frame_buf
 {
     struct litevad_priv *priv = (struct litevad_priv *)handle;
     if (!valid_frame_size(priv->rate_idx, frame_size)) {
-        pr_err("Invalid frame size, valid frame time: 10ms/20ms/30ms\n");
+        pr_err("Invalid frame size, valid frame time: 10ms/20ms/30ms");
         return LITEVAD_RESULT_ERROR;
     }
 
@@ -194,16 +203,16 @@ static int litevad_process_frame(litevad_handle_t handle, const short *frame_buf
         ret = LITEVAD_RESULT_FRAME_SILENCE;
     }
     else {
-        pr_err("Failed to process vad instance\n");
+        pr_err("Failed to process vad instance");
         ret = LITEVAD_RESULT_ERROR;
     }
 
-    pr_dbg("Process: ret=%d, active_time=%d(ms), silence_time=%d(ms), speech_weight=%d\n",
+    pr_dbg("Process: ret=%d, active_time=%d(ms), silence_time=%d(ms), speech_weight=%d",
                         ret, priv->active_time, priv->silence_time, priv->speech_weight);
     return ret;
 }
 
-int litevad_process(litevad_handle_t handle, const void *buff, int size)
+litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int size)
 {
     struct litevad_priv *priv = (struct litevad_priv *)handle;
     short *frame_buff = (short *)buff;
@@ -212,7 +221,7 @@ int litevad_process(litevad_handle_t handle, const void *buff, int size)
     int i = 0, ret = 0;
 
     if ((nsamples % frame_size) != 0) {
-        pr_err("Invalid frame length\n");
+        pr_err("Invalid frame length");
         return LITEVAD_RESULT_ERROR;
     }
 
@@ -228,7 +237,7 @@ int litevad_process(litevad_handle_t handle, const void *buff, int size)
         }
         else {
             if (!priv->speech_detected) {
-                pr_dbg("speech begin\n");
+                pr_dbg("speech begin");
                 priv->speech_detected = true;
                 priv->speech_weight = 100;
                 priv->silence_time = 0;
@@ -243,7 +252,7 @@ int litevad_process(litevad_handle_t handle, const void *buff, int size)
                 ret = LITEVAD_RESULT_FRAME_ACTIVE;
             }
             else if (ret == LITEVAD_RESULT_FRAME_SILENCE) {
-                pr_dbg("speech end\n");
+                pr_dbg("speech end");
                 priv->active_time = 0;
                 priv->silence_time = 0;
                 priv->speech_weight = 0;
@@ -255,7 +264,7 @@ int litevad_process(litevad_handle_t handle, const void *buff, int size)
         i += frame_size;
     }
 
-    return ret;
+    return (litevad_result_t)ret;
 }
 
 void litevad_reset(litevad_handle_t handle)

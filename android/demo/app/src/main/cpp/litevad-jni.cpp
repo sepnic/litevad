@@ -47,14 +47,14 @@ static void jniThrowException(JNIEnv *env, const char *className, const char *ms
     env->DeleteLocalRef(clazz);
 }
 
-static jlong Litevad_native_create(JNIEnv* env, jobject thiz, jint vad_mode, jint sample_rate, jint channel_count)
+static jlong Litevad_native_create(JNIEnv* env, jobject thiz, jint sample_rate, jint channel_count)
 {
     pr_dbg("@@@ Litevad_native_create");
 
     struct litevad_priv *priv = (struct litevad_priv *)calloc(1, sizeof(struct litevad_priv));
     if (priv == nullptr) return (jlong)nullptr;
 
-    priv->mVadHandle = litevad_create(vad_mode, sample_rate, channel_count);
+    priv->mVadHandle = litevad_create(sample_rate, channel_count);
     if (priv->mVadHandle == nullptr) {
         free(priv);
         return (jlong)nullptr;

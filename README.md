@@ -26,6 +26,9 @@ litevad 是一个基于 webrtc 的轻量级 VAD 模块，采用简单的算法�
 // 片段时间内，出现了大量的静音数据，但又会检测到零碎的语音，我们认为这些零碎的语
 // 音是误检测的
 #define DEFAULT_EOS_SILENCE_WEIGHT 30
+
+// VAD 模式（合法值：0/1/2/3），值越大对语音的判断越严格（越准确？）
+#define DEFAULT_VAD_MODE           3
 ```
 
 android/demo 是一个 android 上的使用范例，AudioReecorder 的录音数据送到 litevad 处理，返回如下事件：

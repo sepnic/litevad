@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 luoyun <sysu.zqlong@gmail.com>
+ * Copyright (C) 2018-2022 Qinglong<sysu.zqlong@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,19 @@
 extern "C" {
 #endif
 
-enum litevad_result {
+typedef enum {
     LITEVAD_RESULT_ERROR = -1,
     LITEVAD_RESULT_FRAME_SILENCE = 0,
     LITEVAD_RESULT_FRAME_ACTIVE = 1,
     LITEVAD_RESULT_SPEECH_BEGIN = 2,
     LITEVAD_RESULT_SPEECH_END = 3,
-};
+} litevad_result_t;
 
 typedef void *litevad_handle_t;
 
-litevad_handle_t litevad_create(int vad_mode, int sample_rate, int channel_count);
+litevad_handle_t litevad_create(int sample_rate, int channel_count);
 
-int litevad_process(litevad_handle_t handle, const void *buff, int size);
+litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int size);
 
 void litevad_reset(litevad_handle_t handle);
 

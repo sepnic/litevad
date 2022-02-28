@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
         mBuffSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
         mBuffSize = (mBuffSize/bytesPer10Ms + 1)*bytesPer10Ms;
         mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, mBuffSize);
-        mVadHandle = native_create(3, sampleRate, 1);
+        mVadHandle = native_create(sampleRate, 1);
         mStatus = LITEVAD_RESULT_ERROR;
 
         mRecordThread = new Thread(new Runnable() {
@@ -155,7 +155,7 @@ public class MainActivity extends Activity {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    private native long native_create(int vadMode, int sampleRate, int channelCount);
+    private native long native_create(int sampleRate, int channelCount);
     private native int  native_process(long handle, byte[] buff, int size);
     private native void native_reset(long handle) throws IllegalStateException;
     private native void native_destroy(long handle) throws IllegalStateException;
