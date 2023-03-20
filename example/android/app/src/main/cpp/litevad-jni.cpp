@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 luoyun <sysu.zqlong@gmail.com>
+ * Copyright (C) 2018-2023 luoyun <sysu.zqlong@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,19 @@
  */
 
 #include <jni.h>
-#include <stdio.h>
-#include <string>
+#include <cstdio>
+#include <cassert>
+#include <cstring>
 #include <android/log.h>
 #include "litevad.h"
 
-#define TAG "NativeLiteVad"
+#define TAG "LiteVadJNI"
 
 #define pr_dbg(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##__VA_ARGS__)
 
 #define JAVA_CLASS_NAME "com/example/litevad_demo/MainActivity"
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
-
-struct litevad_priv {
-    litevad_handle_t mVadHandle;
-};
 
 static void jniThrowException(JNIEnv *env, const char *className, const char *msg) {
     jclass clazz = env->FindClass(className);
@@ -39,7 +36,6 @@ static void jniThrowException(JNIEnv *env, const char *className, const char *ms
         /* ClassNotFoundException now pending */
         return;
     }
-
     if (env->ThrowNew(clazz, msg) != JNI_OK) {
         pr_err("Failed throwing '%s' '%s'", className, msg);
         /* an exception, most likely OOM, will now be pending */
@@ -47,62 +43,54 @@ static void jniThrowException(JNIEnv *env, const char *className, const char *ms
     env->DeleteLocalRef(clazz);
 }
 
-static jlong Litevad_native_create(JNIEnv* env, jobject thiz, jint sample_rate, jint channel_count)
+static jlong Litevad_native_create(JNIEnv* env, jobject thiz, jint sample_rate, jint channel_count, jint sample_bits)
 {
-    pr_dbg("@@@ Litevad_native_create");
+    pr_dbg("Litevad_native_create");
 
-    struct litevad_priv *priv = (struct litevad_priv *)calloc(1, sizeof(struct litevad_priv));
-    if (priv == nullptr) return (jlong)nullptr;
-
-    priv->mVadHandle = litevad_create(sample_rate, channel_count);
-    if (priv->mVadHandle == nullptr) {
-        free(priv);
-        return (jlong)nullptr;
-    }
-    return (jlong)priv;
+    litevad_handle_t handle = litevad_create(sample_rate, channel_count, sample_bits);
+    return (jlong)handle;
 }
 
-static jint Litevad_native_process(JNIEnv *env, jobject thiz, jlong handle, jbyteArray buff, jint size)
+static jint Litevad_native_process(JNIEnv *env, jobject thiz, jlong handle, jbyteArray buffer, jint size)
 {
-    //pr_dbg("@@@ Litevad_native_process");
+    //pr_dbg("Litevad_native_process");
 
-    auto priv = reinterpret_cast<struct litevad_priv *>(handle);
-    if (priv == nullptr) {
-        jniThrowException(env, "java/lang/IllegalStateException", nullptr);
+    auto vad = reinterpret_cast<litevad_handle_t>(handle);
+    if (vad == nullptr) {
+        jniThrowException(env, "java/lang/IllegalStateException", "Received null vad-handle");
         return -1;
     }
 
-    jbyte *audio_buff = env->GetByteArrayElements(buff, nullptr);
-    jint ret = litevad_process(priv->mVadHandle, (void *)audio_buff, size);
-    env->ReleaseByteArrayElements(buff, audio_buff, 0);
+    jbyte *bytebuffer = env->GetByteArrayElements(buffer, nullptr);
+    jint ret = litevad_process(vad, (void *)bytebuffer, size);
+    env->ReleaseByteArrayElements(buffer, bytebuffer, 0);
     return ret;
 }
 
 static void Litevad_native_reset(JNIEnv *env, jobject thiz, jlong handle)
 {
-    pr_dbg("@@@ Litevad_native_reset");
+    pr_dbg("Litevad_native_reset");
 
-    auto priv = reinterpret_cast<struct litevad_priv *>(handle);
-    if (priv == nullptr) {
-        jniThrowException(env, "java/lang/IllegalStateException", nullptr);
+    auto vad = reinterpret_cast<litevad_handle_t>(handle);
+    if (vad == nullptr) {
+        jniThrowException(env, "java/lang/IllegalStateException", "Received null vad-handle");
         return;
     }
 
-    litevad_reset(priv->mVadHandle);
+    litevad_reset(vad);
 }
 
 static void Litevad_native_destroy(JNIEnv *env, jobject thiz, jlong handle)
 {
-    pr_dbg("@@@ Litevad_native_destroy");
+    pr_dbg("Litevad_native_destroy");
 
-    auto priv = reinterpret_cast<struct litevad_priv *>(handle);
-    if (priv == nullptr) {
-        jniThrowException(env, "java/lang/IllegalStateException", nullptr);
+    auto vad = reinterpret_cast<litevad_handle_t>(handle);
+    if (vad == nullptr) {
+        jniThrowException(env, "java/lang/IllegalStateException", "Received null vad-handle");
         return;
     }
 
-    litevad_destroy(priv->mVadHandle);
-    free(priv);
+    litevad_destroy(vad);
 }
 
 static JNINativeMethod gMethods[] = {
