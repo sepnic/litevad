@@ -40,6 +40,7 @@ public class MainActivity extends Activity {
     private static final int LITEVAD_RESULT_FRAME_ACTIVE = 1;
     private static final int LITEVAD_RESULT_SPEECH_BEGIN = 2;
     private static final int LITEVAD_RESULT_SPEECH_END = 3;
+    private static final int LITEVAD_RESULT_SPEECH_BEGIN_AND_END = 4;
 
     private final static String TAG = "LiteVadDemo";
     private EventHandler mEventHandler;
@@ -167,10 +168,13 @@ public class MainActivity extends Activity {
                     //mStatusView.setText("FRAME SILENCE");
                     break;
                 case LITEVAD_RESULT_SPEECH_BEGIN:
-                    mStatusView.setText("SPEECH BEGIN");
+                    mStatusView.setText("SPEECH_BEGIN");
                     break;
                 case LITEVAD_RESULT_SPEECH_END:
-                    mStatusView.setText("SPEECH END");
+                    mStatusView.setText("SPEECH_END");
+                    break;
+                case LITEVAD_RESULT_SPEECH_BEGIN_AND_END:
+                    mStatusView.setText("SPEECH_BEGIN_AND_END");
                     break;
                 default:
                     break;

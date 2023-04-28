@@ -239,8 +239,7 @@ litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int 
         if (!priv->speech_detected &&
             priv->active_time < DEFAULT_BOS_ACTIVE_TIME &&
             priv->speech_weight < DEFAULT_BOS_ACTIVE_WEIGHT) {
-            if (result != LITEVAD_RESULT_SPEECH_BEGIN)
-                result = LITEVAD_RESULT_FRAME_SILENCE;
+            result = LITEVAD_RESULT_FRAME_SILENCE;
         } else {
             if (!priv->speech_detected) {
                 //pr_dbg("speech begin");
