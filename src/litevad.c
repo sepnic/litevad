@@ -199,15 +199,13 @@ static int litevad_process_frame(litevad_handle_t handle, const short *frame_buf
         if (priv->speech_weight < 100)
             priv->speech_weight++;
         ret = LITEVAD_RESULT_FRAME_ACTIVE;
-    }
-    else if (ret == 0) {
+    } else if (ret == 0) {
         priv->silence_time += frame_time;
         priv->active_time = 0;
         if (priv->speech_weight > 0)
            priv->speech_weight--;
         ret = LITEVAD_RESULT_FRAME_SILENCE;
-    }
-    else {
+    } else {
         pr_err("Failed to process vad instance");
         ret = LITEVAD_RESULT_ERROR;
     }
@@ -220,6 +218,7 @@ static int litevad_process_frame(litevad_handle_t handle, const short *frame_buf
 litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int size)
 {
     struct litevad_priv *priv = (struct litevad_priv *)handle;
+    litevad_result_t result = LITEVAD_RESULT_ERROR;
     short *frame_buff = (short *)buff;
     int nsamples = size / sizeof(short);
     int frame_size = DEFAULT_SPEECH_FRAME_TIME * valid_sample_rates[priv->rate_idx];
@@ -232,44 +231,49 @@ litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int 
 
     while (i < nsamples) {
         ret = litevad_process_frame(priv, &frame_buff[i], frame_size);
-        if (ret == LITEVAD_RESULT_ERROR)
+        if (ret == LITEVAD_RESULT_ERROR) {
+            result = LITEVAD_RESULT_ERROR;
             break;
+        }
 
         if (!priv->speech_detected &&
             priv->active_time < DEFAULT_BOS_ACTIVE_TIME &&
             priv->speech_weight < DEFAULT_BOS_ACTIVE_WEIGHT) {
-            ret = LITEVAD_RESULT_FRAME_SILENCE;
-        }
-        else {
+            if (result != LITEVAD_RESULT_SPEECH_BEGIN)
+                result = LITEVAD_RESULT_FRAME_SILENCE;
+        } else {
             if (!priv->speech_detected) {
-                pr_dbg("speech begin");
+                //pr_dbg("speech begin");
                 priv->speech_detected = true;
                 priv->speech_weight = 100;
                 priv->silence_time = 0;
-                ret = LITEVAD_RESULT_SPEECH_BEGIN;
-                // FIXME: ignore left data if speech-begin detected, you should comment
-                // following line if you don't care about speech-begin event
-                break;
+                result = LITEVAD_RESULT_SPEECH_BEGIN;
             }
 
             if (priv->silence_time < DEFAULT_EOS_SILENCE_TIME &&
                 priv->speech_weight > DEFAULT_EOS_SILENCE_WEIGHT) {
-                ret = LITEVAD_RESULT_FRAME_ACTIVE;
-            }
-            else if (ret == LITEVAD_RESULT_FRAME_SILENCE) {
-                pr_dbg("speech end");
+                if (result != LITEVAD_RESULT_SPEECH_BEGIN)
+                    result = LITEVAD_RESULT_FRAME_ACTIVE;
+            } else if (ret == LITEVAD_RESULT_FRAME_SILENCE) {
+                //pr_dbg("speech end");
                 priv->active_time = 0;
                 priv->silence_time = 0;
                 priv->speech_weight = 0;
                 priv->speech_detected = false;
-                ret = LITEVAD_RESULT_SPEECH_END;
+                if (result != LITEVAD_RESULT_SPEECH_BEGIN)
+                    result = LITEVAD_RESULT_SPEECH_END;
+                else
+                    result = LITEVAD_RESULT_SPEECH_BEGIN_AND_END;
                 break;
+            } else {
+                if (result != LITEVAD_RESULT_SPEECH_BEGIN)
+                    result = ret;
             }
         }
         i += frame_size;
     }
 
-    return (litevad_result_t)ret;
+    return result;
 }
 
 void litevad_reset(litevad_handle_t handle)
