@@ -25,17 +25,17 @@
 #if defined(ANDROID)
 #include <android/log.h>
 #define TAG "litevad"
-#define pr_dbg(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##__VA_ARGS__)
+#define pr_dbg(fmt, ...) //__android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##__VA_ARGS__)
 
 #elif defined(LITEVAD_HAVE_SYSUTILS_ENABLED)
 #include "cutils/log_helper.h"
 #define TAG "litevad"
-#define pr_dbg(fmt, ...) OS_LOGV(TAG, fmt, ##__VA_ARGS__)
+#define pr_dbg(fmt, ...) //OS_LOGD(TAG, fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) OS_LOGE(TAG, fmt, ##__VA_ARGS__)
 
 #else
-#define pr_dbg(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define pr_dbg(fmt, ...) //fprintf(stdout, fmt "\n", ##__VA_ARGS__)
 #define pr_err(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
 #endif
 
@@ -210,8 +210,8 @@ static int litevad_process_frame(litevad_handle_t handle, const short *frame_buf
         ret = LITEVAD_RESULT_ERROR;
     }
 
-    //pr_dbg("Process: ret=%d, active_time=%d(ms), silence_time=%d(ms), speech_weight=%d",
-    //                    ret, priv->active_time, priv->silence_time, priv->speech_weight);
+    pr_dbg("Process: ret=%d, active_time=%d(ms), silence_time=%d(ms), speech_weight=%d",
+            ret, priv->active_time, priv->silence_time, priv->speech_weight);
     return ret;
 }
 
@@ -242,7 +242,7 @@ litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int 
             result = LITEVAD_RESULT_FRAME_SILENCE;
         } else {
             if (!priv->speech_detected) {
-                //pr_dbg("speech begin");
+                pr_dbg("speech begin");
                 priv->speech_detected = true;
                 priv->speech_weight = 100;
                 priv->silence_time = 0;
@@ -254,7 +254,7 @@ litevad_result_t litevad_process(litevad_handle_t handle, const void *buff, int 
                 if (result != LITEVAD_RESULT_SPEECH_BEGIN)
                     result = LITEVAD_RESULT_FRAME_ACTIVE;
             } else if (ret == LITEVAD_RESULT_FRAME_SILENCE) {
-                //pr_dbg("speech end");
+                pr_dbg("speech end");
                 priv->active_time = 0;
                 priv->silence_time = 0;
                 priv->speech_weight = 0;

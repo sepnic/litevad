@@ -20,11 +20,10 @@
 #include <alsa/asoundlib.h>
 #include "litevad.h"
 
-
 #if 0
-#define ALSA_DEVICE     "default"
+#define ALSA_DEVICE             "default"
 #else
-#define ALSA_DEVICE     "sysdefault"
+#define ALSA_DEVICE             "sysdefault"
 #endif
 
 #define RECORD_SAMPLE_RATE      16000
@@ -42,7 +41,6 @@ int main()
     snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
     uint32_t buffer_time, period_time;
     snd_pcm_uframes_t chunk_size, buffer_size;
-    size_t bits_per_sample, bits_per_frame;
 
     if (snd_pcm_open(&pcm, ALSA_DEVICE, stream, 0) < 0) {
         fprintf(stderr, "snd_pcm_open failed\n");
@@ -105,9 +103,8 @@ int main()
         fprintf(stderr, "Can't use period equal to buffer size\n");
         goto __out;
     }
-    bits_per_sample = snd_pcm_format_physical_width(format);
-    bits_per_frame = bits_per_sample * channel_count;
 
+    size_t bits_per_frame = snd_pcm_format_physical_width(format) * channel_count;
     int bytes_per_ms = (RECORD_SAMPLE_RATE/1000)*(RECORD_SAMPLE_BIT/8)*RECORD_CHANNEL_COUNT;
     int read_size = bytes_per_ms * RECORD_BUFFER_TIME;
     char *read_buffer = (char *)malloc(read_size);
