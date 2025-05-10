@@ -27,7 +27,7 @@ add_library(litevad STATIC ${LITEVAD_SRC})
 target_include_directories(litevad PRIVATE ${TOP_DIR}/thirdparty/webrtc/inc)
 
 # portaudio
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/install_portaudio.sh
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/install_portaudio_github.sh
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/portaudio/install/include)
 set(PORTAUDIO_LIB "${CMAKE_CURRENT_BINARY_DIR}/portaudio/install/lib/libportaudio.a")
